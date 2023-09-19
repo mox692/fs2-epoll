@@ -17,7 +17,7 @@
 package fs2.io.epoll
 package unsafe
 
-import jnr.ffi.{LibraryLoader, Platform, Pointer, Struct, Runtime, LastError}
+import jnr.ffi.{LibraryLoader, Platform, Pointer, Struct, Runtime, LastError, Memory}
 
 private[epoll] object libc {
 
@@ -93,6 +93,9 @@ private[epoll] object libc {
       def close(fd: Int): Int
       def eventfd(initval: Int, flags: Int): Int
       def write(fd: Int, buf: Pointer, count: Long): Long
+      def read(fd: Int, buf: Pointer, count: Long): Long
+      def pipe(pipefd: Array[Int]): Int
+      def fcntl(fd: Int, cmd1: Int, cmd2: Int): Int
     }
 
     def epoll_create1(flags: Int): Int = libc.epoll_create1(flags)
@@ -105,5 +108,18 @@ private[epoll] object libc {
     def close(fd: Int): Int = libc.close(fd)
     def eventfd(initval: Int, flags: Int): Int = libc.eventfd(initval, flags)
     def write(fd: Int, buf: Pointer, count: Long): Long = libc.write(fd, buf, count)
+    def read(fd: Int, buf: Pointer, count: Long): Long = libc.read(fd, buf, count)
+    def pipe(pipefd: Array[Int]): Int = libc.pipe(pipefd)
+    def fcntl(fd: Int, cmd1: Int, cmd2: Int): Int = libc.fcntl(fd, cmd1, cmd2)
+
+    def byteToPtr(bytes: Array[Byte], offset: Int): Pointer =
+      byteToPtr(bytes, bytes.length, offset)
+
+    def byteToPtr(bytes: Array[Byte], size: Int, offset: Int): Pointer = {
+      val buf = Memory
+        .allocate(globalRuntime, size)
+      buf.put(offset, bytes, 0, size)
+      buf
+    }
   }
 }
